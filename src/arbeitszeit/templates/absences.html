@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field with context %}
+{% block title %}Urlaub &amp; Abwesenheit{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div><a role="button" class="outline small" href="/abwesenheiten?year={{ year - 1 }}">‹</a>
+  <a role="button" class="outline small" href="/abwesenheiten?year={{ year + 1 }}">›</a></div>
+  <h2>Urlaub &amp; Abwesenheit {{ year }}</h2><span></span>
+</div>
+<div class="stats">
+  <article class="stat"><small>Anspruch</small><strong>{{ s.vacation_entitlement | num }}</strong></article>
+  <article class="stat"><small>Genommen</small><strong>{{ s.vacation_taken | num }}</strong></article>
+  <article class="stat"><small>Geplant</small><strong>{{ s.vacation_planned | num }}</strong></article>
+  <article class="stat"><small>Übrig</small><strong class="{{ 'neg' if s.vacation_left < 0 else '' }}">{{ s.vacation_left | num }}</strong></article>
+</div>
+<article>
+  <header><strong>Abwesenheit eintragen</strong></header>
+  <form method="post" action="/abwesenheiten">
+    {{ csrf_field() }}
+    <div class="form-grid">
+      <label>Von <input type="date" name="start" required></label>
+      <label>Bis <input type="date" name="end"></label>
+      <label>Art <select name="kind">{% for k, l in ABSENCE_LABELS.items() %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></label>
+      <label class="wide">Notiz <input name="note" maxlength="255"></label>
+      <label><input type="checkbox" name="half" value="1"> halber Tag</label>
+      <button>Eintragen</button>
+    </div>
+    <small class="muted">Wochenenden, Feiertage und Betriebsferien werden automatisch übersprungen.</small>
+  </form>
+</article>
+<table class="data striped">
+  <thead><tr><th>Zeitraum</th><th>Art</th><th class="num">Tage</th><th>Notiz</th><th></th></tr></thead>
+  <tbody>
+  {% for g in groups %}
+    <tr>
+      <td>{{ g.start | de_date }}{% if g.end != g.start %} – {{ g.end | de_date }}{% endif %}</td>
+      <td>{{ ABSENCE_LABELS[g.kind] }}</td><td class="num">{{ g.days | num }}</td><td>{{ g.note }}</td>
+      <td class="num"><form method="post" action="/abwesenheiten/loeschen" style="margin:0" onsubmit="return confirm('Eintrag löschen?')">
+        {{ csrf_field() }}<input type="hidden" name="ids" value="{{ g.ids | join(',') }}"><input type="hidden" name="year" value="{{ year }}">
+        <button class="linklike">Löschen</button></form></td>
+    </tr>
+  {% else %}<tr><td colspan="5" class="muted">Keine Einträge.</td></tr>{% endfor %}
+  </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Fehler {{ code }}{% endblock %}
+{% block content %}
+<article><h1>{{ code }}</h1><p>{{ detail if detail and detail != 'Not Found' else ('Seite nicht gefunden.' if code == 404 else 'Es ist ein Fehler aufgetreten.') }}</p><a href="/">Zur Startseite</a></article>
+{% endblock %}

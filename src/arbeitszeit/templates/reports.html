@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Berichte{% endblock %}
+{% block content %}
+<h1>Berichte</h1>
+<article>
+<form method="get" action="/berichte" hx-boost="false">
+  <div class="form-grid">
+    <label>Von <input type="date" name="frm" value="{{ frm.isoformat() }}"></label>
+    <label>Bis <input type="date" name="to" value="{{ to.isoformat() }}"></label>
+    <label>Projekt <select name="project_id"><option value="">Alle</option>
+      {% for p in projects %}<option value="{{ p.id }}" {% if p.id == project_id %}selected{% endif %}>{{ p.label }}</option>{% endfor %}</select></label>
+    {% if users | length > 1 %}<label>Mitarbeiter <select name="user_id"><option value="">Alle</option>
+      {% for u in users %}<option value="{{ u.id }}" {% if u.id == user_id %}selected{% endif %}>{{ u.name }}</option>{% endfor %}</select></label>{% endif %}
+    <button>Anzeigen</button>
+    <button type="submit" formaction="/berichte/export.csv" class="secondary outline">CSV-Export</button>
+  </div>
+</form>
+</article>
+<div class="stats"><article class="stat"><small>Summe im Zeitraum</small><strong>{{ total | hm }}</strong><small>{{ total | hours }} Stunden</small></article></div>
+<div class="grid">
+  <article><header><strong>Nach Projekt</strong></header>
+    {% for name, m in by_project %}
+      <div class="entry"><span>{{ name }}</span><strong>{{ m | hm }}</strong></div>
+      <div class="bar" style="width: {{ (100 * m / total) | round(1) }}%"></div>
+    {% else %}<p class="muted">Keine Buchungen.</p>{% endfor %}</article>
+  {% if users | length > 1 %}
+  <article><header><strong>Nach Mitarbeiter</strong></header>
+    {% for name, m in by_user %}<div class="entry"><span>{{ name }}</span><strong>{{ m | hm }}</strong></div>{% else %}<p class="muted">–</p>{% endfor %}</article>
+  {% endif %}
+</div>
+<table class="data striped"><thead><tr><th>Datum</th>{% if users | length > 1 %}<th>Mitarbeiter</th>{% endif %}<th>Projekt</th><th>Kommentar</th><th class="num">Dauer</th></tr></thead><tbody>
+{% for e in entries %}
+  <tr><td>{{ e.day | de_date }}</td>{% if users | length > 1 %}<td>{{ e.user.name }}</td>{% endif %}<td>{{ e.project.code }}</td><td>{{ e.comment }}</td><td class="num">{{ e.minutes | hm }}</td></tr>
+{% endfor %}</tbody></table>
+{% endblock %}

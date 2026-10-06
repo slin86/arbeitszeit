@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Anmelden{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>⏱ Arbeitszeit</h1>
+  {% if settings.local_login_enabled %}
+  <form method="post" action="/login">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <input type="hidden" name="next" value="{{ next }}">
+    <label>E-Mail <input type="email" name="email" value="{{ email }}" autocomplete="username" required autofocus></label>
+    <label>Passwort <input type="password" name="password" autocomplete="current-password" required></label>
+    <button type="submit">Anmelden</button>
+  </form>
+  {% endif %}
+  {% if providers %}
+  <div class="sso">
+    {% if settings.local_login_enabled %}<small class="muted" style="text-align:center">oder</small>{% endif %}
+    {% for p in providers %}<a role="button" class="secondary outline" hx-boost="false" href="/auth/{{ p.key }}/login">Anmelden mit {{ p.label }}</a>{% endfor %}
+  </div>
+  {% endif %}
+  {% if not providers and not settings.local_login_enabled %}<p>Keine Anmeldemethode konfiguriert.</p>{% endif %}
+</article>
+{% endblock %}

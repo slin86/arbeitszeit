@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, saldo, period_stats with context %}
+{% block title %}Jahr {{ year }}{% endblock %}
+{% block content %}
+<div class="toolbar">
+  <div><a role="button" class="outline small" href="/jahr?year={{ year - 1 }}">‹</a>
+  <a role="button" class="outline small" href="/jahr?year={{ year + 1 }}">›</a></div>
+  <h2>Jahresübersicht {{ year }}</h2><span></span>
+</div>
+{{ period_stats(s.year_stats) }}
+<p class="muted">Tagessoll {{ s.daily_minutes | hm }} h = {{ user.annual_hours | num }} h ÷ {{ s.planned_days }} Arbeitstage{% if not settings.vacation_in_annual_hours %} − {{ user.vacation_days | num }} Urlaubstage{% endif %}.
+ Betriebsferien {{ settings.shutdown_start[3:] }}.{{ settings.shutdown_start[:2] }}.–{{ settings.shutdown_end[3:] }}.{{ settings.shutdown_end[:2] }}. und Feiertage ({{ GERMAN_STATES.get(user.state, user.state) }}) sind abgezogen.</p>
+<table class="data striped">
+  <thead><tr><th>Monat</th><th class="num">Arbeitstage</th><th class="num">Abwesend</th><th class="num">Soll</th><th class="num">Ist</th><th class="num">Saldo</th><th class="num">Σ Saldo</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for st in s.months %}
+    <tr>
+      <td><a href="/zeiten?year={{ year }}&month={{ loop.index }}">{{ MONTH_NAMES[loop.index] }}</a></td>
+      <td class="num">{{ st.planned_days }}</td>
+      <td class="num">{{ st.absence_days | num if st.absence_days else '' }}</td>
+      <td class="num">{{ st.target_minutes | hm }}</td>
+      <td class="num">{{ st.worked_minutes | hm }}</td>
+      <td class="num">{{ saldo(st.saldo_minutes) }}</td>
+      <td class="num">{% if cumulative[loop.index0] is not none %}{{ saldo(cumulative[loop.index0]) }}{% endif %}</td>
+      <td>{{ badge(statuses[loop.index0]) }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+  <tfoot><tr><th>Summe</th><th class="num">{{ s.year_stats.planned_days }}</th><th class="num">{{ s.year_stats.absence_days | num }}</th>
+    <th class="num">{{ s.year_stats.target_minutes | hm }}</th><th class="num">{{ s.year_stats.worked_minutes | hm }}</th>
+    <th class="num">{{ saldo(s.year_stats.saldo_minutes) }}</th><th></th><th></th></tr></tfoot>
+</table>
+{% endblock %}

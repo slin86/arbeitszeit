@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field with context %}
+{% block title %}Benutzer bearbeiten{% endblock %}
+{% block content %}
+<h1>{{ 'Benutzer bearbeiten' if u else 'Neuer Benutzer' }}</h1>
+<article>
+<form method="post" action="{{ '/admin/benutzer/%d' % u.id if u else '/admin/benutzer' }}">
+  {{ csrf_field() }}
+  <div class="form-grid">
+    <label>Name <input name="name" value="{{ u.name if u else '' }}" required></label>
+    <label>E-Mail <input type="email" name="email" value="{{ u.email if u else '' }}" required></label>
+    <label>Rolle <select name="role">
+      {% for r, l in [('user','Benutzer'),('approver','Freigeber'),('admin','Administrator')] %}<option value="{{ r }}" {% if u and u.role == r %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></label>
+    <label>Freigeber <select name="approver_id"><option value="">– keiner –</option>
+      {% for a in approvers %}{% if not u or a.id != u.id %}<option value="{{ a.id }}" {% if u and u.approver_id == a.id %}selected{% endif %}>{{ a.name }}</option>{% endif %}{% endfor %}</select></label>
+    <label>Jahresstunden <input type="number" name="annual_hours" step="0.5" min="1" value="{{ (u.annual_hours if u else settings.default_annual_hours) | num(2) }}" required></label>
+    <label>Urlaubstage <input type="number" name="vacation_days" step="0.5" min="0" value="{{ (u.vacation_days if u else settings.default_vacation_days) | num(2) }}" required></label>
+    <label>Bundesland (Feiertage) <select name="state">
+      {% for k, n in GERMAN_STATES.items() %}<option value="{{ k }}" {% if (u.state if u else settings.default_state) == k %}selected{% endif %}>{{ n }}</option>{% endfor %}</select></label>
+    <label>Startdatum (Soll zählt ab hier) <input type="date" name="start_date" value="{{ (u.start_date if u else today()).isoformat() if (u.start_date if u else today()) else '' }}"></label>
+    <label>Startsaldo in Stunden (± Überstunden am Startdatum) <input type="number" name="opening_balance_hours" step="0.25" value="{{ (u.opening_balance_hours if u else 0) | num(2) }}"></label>
+    <label>Passwort {{ '(leer lassen = unverändert)' if u else '' }} <input type="password" name="password" autocomplete="new-password" minlength="10"></label>
+    <label><input type="checkbox" name="is_active" value="1" {% if not u or u.is_active %}checked{% endif %}> Aktiv</label>
+  </div>
+  <button>Speichern</button> <a href="/admin/benutzer">Abbrechen</a>
+</form>
+</article>
+{% endblock %}

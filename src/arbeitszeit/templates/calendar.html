@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% from "macros.html" import month_nav, approval_bar, period_stats with context %}
+{% block title %}Kalender {{ MONTH_NAMES[month] }} {{ year }}{% endblock %}
+{% block content %}
+{% set next_url = '/kalender?year=%d&month=%d' % (year, month) %}
+{{ month_nav('/kalender', year, month, prev, next) }}
+{{ period_stats(stats) }}
+{{ approval_bar(status, approval, year, month, next_url, locked, stats) }}
+<div class="cal">
+  {% for n in WEEKDAY_SHORT %}<div class="h">{{ n }}</div>{% endfor %}
+  {% for c in cells %}
+    {% if c is none %}<div class="c empty"></div>
+    {% else %}
+    <a class="c {{ 'off' if not c.workday else '' }} {{ 'today' if c.day == today() else '' }}" href="/woche?year={{ c.day.isocalendar()[0] }}&week={{ c.day.isocalendar()[1] }}">
+      <span class="d">{{ c.day.day }}</span>
+      <span class="m">{{ c.minutes | hm if c.minutes else '' }}</span>
+      {% if c.label %}<span class="l">{{ c.label }}</span>{% endif %}
+      {% if c.absence %}<span class="l">{{ ABSENCE_LABELS[c.absence.kind] }}{% if c.absence.fraction < 1 %} ½{% endif %}</span>{% endif %}
+    </a>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

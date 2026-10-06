@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, saldo, day_table, period_stats, csrf_field with context %}
+{% block title %}Freigabe {{ owner.name }}{% endblock %}
+{% block content %}
+<div class="toolbar"><h1>{{ owner.name }} · {{ MONTH_NAMES[a.month] }} {{ a.year }}</h1>{{ badge(a.status) }}</div>
+{{ period_stats(stats) }}
+{% if a.status == 'submitted' %}
+  <p class="muted">Eingereicht am {{ a.submitted_at.strftime('%d.%m.%Y %H:%M') }} · Stand bei Einreichung: Ist {{ a.worked_minutes | hm }} / Soll {{ a.target_minutes | hm }}
+  {% if a.worked_minutes != stats.worked_minutes %}<strong class="neg"> – Buchungen wurden seither geändert!</strong>{% endif %}</p>
+{% elif a.decided_at %}
+  <p class="muted">Entschieden am {{ a.decided_at.strftime('%d.%m.%Y %H:%M') }}{% if a.decided_by %} von {{ a.decided_by.name }}{% endif %}{% if a.note %} – „{{ a.note }}“{% endif %}</p>
+{% endif %}
+
+{% if can_decide %}
+<article>
+  {% if a.status == 'submitted' %}
+  <form method="post" class="form-grid" style="align-items:end">
+    {{ csrf_field() }}
+    <label class="wide">Kommentar (bei Ablehnung Pflicht) <input name="note" maxlength="500"></label>
+    <button formaction="/freigaben/{{ a.id }}/freigeben">Freigeben</button>
+    <button formaction="/freigaben/{{ a.id }}/ablehnen" class="secondary">Ablehnen</button>
+  </form>
+  {% elif a.status == 'approved' %}
+  <form method="post" action="/freigaben/{{ a.id }}/oeffnen" style="margin:0" onsubmit="return confirm('Freigabe aufheben und Monat wieder zur Bearbeitung öffnen?')">
+    {{ csrf_field() }}<button class="secondary outline small">Monat wieder öffnen</button></form>
+  {% endif %}
+</article>
+{% endif %}
+
+<div class="grid">
+  <div>{{ day_table(rows, '/freigaben/%d' % a.id, editable=False) }}</div>
+  <article style="align-self:start"><header><strong>Nach Projekt</strong></header>
+    {% for name, m in by_project %}<div class="entry"><span>{{ name }}</span><strong>{{ m | hm }}</strong></div>{% else %}<p class="muted">Keine Buchungen.</p>{% endfor %}</article>
+</div>
+<p><a href="/freigaben">← zurück</a></p>
+{% endblock %}

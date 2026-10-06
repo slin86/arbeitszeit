@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Arbeitszeit{% endblock %} · Arbeitszeit</title>
+  <link rel="stylesheet" href="/static/vendor/pico.min.css">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/vendor/htmx.min.js" defer></script>
+</head>
+<body hx-boost="true">
+{% if user %}
+<header class="container">
+  <nav class="top">
+    <ul><li><a href="/" class="brand">⏱ Arbeitszeit</a></li></ul>
+    {% set p = request.url.path %}
+    <ul>
+      <li><a href="/" {% if p == '/' %}aria-current="page"{% endif %}>Übersicht</a></li>
+      <li><a href="/zeiten" {% if p.startswith('/zeiten') or p.startswith('/woche') or p.startswith('/kalender') %}aria-current="page"{% endif %}>Zeiten</a></li>
+      <li><a href="/abwesenheiten" {% if p.startswith('/abwesenheiten') %}aria-current="page"{% endif %}>Urlaub</a></li>
+      <li><a href="/jahr" {% if p.startswith('/jahr') %}aria-current="page"{% endif %}>Jahr</a></li>
+      <li><a href="/berichte" {% if p.startswith('/berichte') %}aria-current="page"{% endif %}>Berichte</a></li>
+      {% if user.is_approver %}<li><a href="/freigaben" {% if p.startswith('/freigaben') %}aria-current="page"{% endif %}>Freigaben</a></li>{% endif %}
+      {% if user.is_admin %}
+      <li><a href="/admin/benutzer" {% if p.startswith('/admin/benutzer') %}aria-current="page"{% endif %}>Benutzer</a></li>
+      <li><a href="/admin/projekte" {% if p.startswith('/admin/projekte') %}aria-current="page"{% endif %}>Projekte</a></li>
+      {% endif %}
+    </ul>
+    <ul>
+      <li><a href="/profil">{{ user.name }}</a></li>
+      <li><form method="post" action="/logout" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="secondary outline small">Abmelden</button></form></li>
+    </ul>
+  </nav>
+</header>
+{% endif %}
+<main class="container">
+  {% for level, msg in messages %}<div class="flash {{ level }}" role="status">{{ msg }}</div>{% endfor %}
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

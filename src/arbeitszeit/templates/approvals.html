@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, saldo with context %}
+{% block title %}Freigaben{% endblock %}
+{% block content %}
+<h1>Freigaben</h1>
+<article>
+  <header><strong>Wartet auf Freigabe ({{ pending | length }})</strong></header>
+  {% if pending %}
+  <table class="data striped"><thead><tr><th>Mitarbeiter</th><th>Monat</th><th class="num">Ist</th><th class="num">Soll</th><th class="num">Saldo</th><th>Eingereicht</th><th></th></tr></thead><tbody>
+  {% for a in pending %}
+    <tr><td>{{ a.user.name }}</td><td>{{ MONTH_NAMES[a.month] }} {{ a.year }}</td>
+      <td class="num">{{ a.worked_minutes | hm }}</td><td class="num">{{ a.target_minutes | hm }}</td>
+      <td class="num">{{ saldo(a.worked_minutes - a.target_minutes) }}</td>
+      <td>{{ a.submitted_at.strftime('%d.%m.%Y') }}</td>
+      <td class="num"><a role="button" class="small" href="/freigaben/{{ a.id }}">Prüfen</a></td></tr>
+  {% endfor %}</tbody></table>
+  {% else %}<p class="muted">Nichts offen. 🎉</p>{% endif %}
+</article>
+
+<div class="toolbar">
+  <div><a role="button" class="outline small" href="/freigaben?year={{ prev[0] }}&month={{ prev[1] }}">‹</a>
+  <a role="button" class="outline small" href="/freigaben?year={{ next[0] }}&month={{ next[1] }}">›</a></div>
+  <h2>Team · {{ MONTH_NAMES[month] }} {{ year }}</h2><span></span>
+</div>
+<table class="data striped"><thead><tr><th>Mitarbeiter</th><th class="num">Ist</th><th class="num">Soll</th><th class="num">Saldo</th><th>Status</th><th></th></tr></thead><tbody>
+{% for u, st, a in team %}
+  <tr><td>{{ u.name }}</td><td class="num">{{ st.worked_minutes | hm }}</td><td class="num">{{ st.target_minutes | hm }}</td>
+    <td class="num">{{ saldo(st.saldo_minutes) }}</td>
+    <td>{{ badge(a.status if a else 'open') }}</td>
+    <td class="num">{% if a and a.status != 'open' %}<a href="/freigaben/{{ a.id }}">Details</a>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="muted">Ihnen sind keine Mitarbeiter zugeordnet. Ein Administrator kann das unter „Benutzer“ festlegen.</td></tr>{% endfor %}
+</tbody></table>
+{% endblock %}

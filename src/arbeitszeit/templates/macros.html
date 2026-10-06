@@ -1,0 +1,107 @@
+{% macro badge(status) %}<span class="badge {{ status }}">{{ STATUS_LABELS[status] }}</span>{% endmacro %}
+
+{% macro saldo(minutes) %}<span class="{{ 'pos' if minutes > 0.5 else ('neg' if minutes < -0.5 else '') }}">{{ minutes | hm(true) }}</span>{% endmacro %}
+
+{% macro csrf_field() %}<input type="hidden" name="csrf_token" value="{{ csrf }}">{% endmacro %}
+
+{# Formular zum Buchen einer Arbeitszeit #}
+{% macro entry_form(projects, default_project, day, next, e=None, action='/zeiten', submit='Buchen') %}
+<form method="post" action="{{ action }}">
+  {{ csrf_field() }}
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="form-grid">
+    <label>Datum <input type="date" name="day" value="{{ (e.day if e else day).isoformat() }}" required></label>
+    <label>Projekt
+      <select name="project_id" required>
+        {% for p in projects %}<option value="{{ p.id }}" {% if p.id == (e.project_id if e else default_project) %}selected{% endif %}>{{ p.label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>Von <input type="time" name="start" value="{{ e.start.strftime('%H:%M') if e and e.start else '' }}"></label>
+    <label>Bis <input type="time" name="end" value="{{ e.end.strftime('%H:%M') if e and e.end else '' }}"></label>
+    <label>Pause <input name="pause" placeholder="0:30" inputmode="text" autocomplete="off"></label>
+    <label>oder Dauer <input name="duration" placeholder="1:30 · 1,5 · 90m" value="{{ (e.minutes | hm) if e and not e.start else '' }}" autocomplete="off"></label>
+    <label class="wide">Kommentar <input name="comment" value="{{ e.comment if e else '' }}" maxlength="2000" placeholder="Was wurde gemacht?" autocomplete="off"></label>
+    <button type="submit">{{ submit }}</button>
+  </div>
+  <small class="muted">Entweder „Von/Bis“ (abzüglich Pause) oder eine Dauer eintragen.</small>
+</form>
+{% endmacro %}
+
+{% macro month_nav(base, year, month, prev, next) %}
+<div class="toolbar">
+  <div><a role="button" class="outline small" href="{{ base }}?year={{ prev[0] }}&month={{ prev[1] }}">‹</a>
+  <a role="button" class="outline small" href="{{ base }}?year={{ next[0] }}&month={{ next[1] }}">›</a>
+  <a role="button" class="outline secondary small" href="{{ base }}">Heute</a></div>
+  <h2>{{ MONTH_NAMES[month] }} {{ year }}</h2>
+  <div class="tabs">
+    <a href="/zeiten?year={{ year }}&month={{ month }}" {% if base == '/zeiten' %}aria-current="page"{% endif %}>Monat</a>
+    <a href="/woche" {% if base == '/woche' %}aria-current="page"{% endif %}>Woche</a>
+    <a href="/kalender?year={{ year }}&month={{ month }}" {% if base == '/kalender' %}aria-current="page"{% endif %}>Kalender</a>
+  </div>
+</div>
+{% endmacro %}
+
+{# Eine Tagesliste mit Buchungen (Monat/Woche/Freigabe-Detail) #}
+{% macro day_table(rows, next, editable=True) %}
+<table class="data striped">
+  <thead><tr><th>Tag</th><th>Buchungen</th><th class="num">Ist</th><th class="num">Soll</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="{{ 'off' if not r.workday and not r.entries else '' }} {{ 'today' if r.day == today() else '' }}">
+      <td style="white-space:nowrap"><strong>{{ WEEKDAY_SHORT[r.day.weekday()] }}</strong> {{ r.day.strftime('%d.%m.') }}
+        {% if r.label %}<br><small class="muted">{{ r.label }}</small>{% endif %}</td>
+      <td>
+        {% if r.absence %}<div><span class="badge open">{{ ABSENCE_LABELS[r.absence.kind] }}{% if r.absence.fraction < 1 %} ½{% endif %}</span> <small class="muted">{{ r.absence.note }}</small></div>{% endif %}
+        {% for e in r.entries %}
+        <div class="entry">
+          <span><strong>{{ e.project.code }}</strong> {{ e.comment }}
+            {% if e.start %}<small>({{ e.start.strftime('%H:%M') }}–{{ e.end.strftime('%H:%M') }})</small>{% endif %}</span>
+          <span class="actions"><span>{{ e.minutes | hm }}</span>
+          {% if editable %}
+            <a href="/zeiten/{{ e.id }}?next={{ next | urlencode }}" class="small" aria-label="Bearbeiten">✎</a>
+            <form method="post" action="/zeiten/{{ e.id }}/loeschen" onsubmit="return confirm('Buchung löschen?')">
+              {{ csrf_field() }}<input type="hidden" name="next" value="{{ next }}">
+              <button class="linklike" aria-label="Löschen">✕</button></form>
+          {% endif %}</span>
+        </div>
+        {% endfor %}
+      </td>
+      <td class="num">{{ r.minutes | hm if r.minutes else '' }}</td>
+      <td class="num muted">{{ r.target | hm if r.workday else '' }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endmacro %}
+
+{# Freigabe-Leiste #}
+{% macro approval_bar(status, approval, year, month, next, locked, stats) %}
+<article style="margin-bottom:1rem">
+  <div class="toolbar" style="margin:0">
+    <div>Status {{ MONTH_NAMES[month] }}: {{ badge(status) }}
+      {% if status == 'rejected' and approval %}<br><small class="neg">Abgelehnt: {{ approval.note }}</small>{% endif %}
+      {% if status == 'approved' and approval %}<br><small class="muted">Freigegeben am {{ approval.decided_at.strftime('%d.%m.%Y') }}{% if approval.decided_by %} von {{ approval.decided_by.name }}{% endif %}</small>{% endif %}
+    </div>
+    <div>
+    {% if status in ('open', 'rejected') %}
+      <form method="post" action="/monat/einreichen" style="margin:0" onsubmit="return confirm('Monat {{ MONTH_NAMES[month] }} {{ year }} zur Freigabe einreichen? Danach sind keine Änderungen mehr möglich.')">
+        {{ csrf_field() }}<input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="next" value="{{ next }}">
+        <button class="small">Zur Freigabe einreichen</button></form>
+    {% elif status == 'submitted' %}
+      <form method="post" action="/monat/zurueckziehen" style="margin:0">
+        {{ csrf_field() }}<input type="hidden" name="year" value="{{ year }}"><input type="hidden" name="month" value="{{ month }}"><input type="hidden" name="next" value="{{ next }}">
+        <button class="secondary small">Zurückziehen</button></form>
+    {% endif %}
+    </div>
+  </div>
+</article>
+{% endmacro %}
+
+{% macro period_stats(stats, label='Zeitraum') %}
+<div class="stats">
+  <article class="stat"><small>Ist</small><strong>{{ stats.worked_minutes | hm }}</strong></article>
+  <article class="stat"><small>Soll</small><strong>{{ stats.target_minutes | hm }}</strong></article>
+  <article class="stat"><small>Saldo</small><strong>{{ saldo(stats.saldo_minutes) }}</strong></article>
+  <article class="stat"><small>Abwesend / Arbeitstage</small><strong>{{ stats.absence_days | num }} / {{ stats.planned_days }}</strong></article>
+</div>
+{% endmacro %}

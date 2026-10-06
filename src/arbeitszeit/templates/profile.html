@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Profil{% endblock %}
+{% block content %}
+<h1>Profil</h1>
+<article>
+  <form method="post" action="/profil">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>E-Mail <input value="{{ user.email }}" disabled></label>
+    <label>Name <input name="name" value="{{ user.name }}" required></label>
+    <details {% if not user.password_hash %}open{% endif %}>
+      <summary>{{ 'Passwort ändern' if user.password_hash else 'Lokales Passwort festlegen' }}</summary>
+      {% if user.password_hash %}<label>Aktuelles Passwort <input type="password" name="current_password" autocomplete="current-password"></label>{% endif %}
+      <label>Neues Passwort (min. 10 Zeichen) <input type="password" name="new_password" autocomplete="new-password" minlength="10"></label>
+    </details>
+    <button>Speichern</button>
+  </form>
+</article>
+<article>
+  <h2>Meine Vorgaben</h2>
+  <p>Jahresstunden: <strong>{{ user.annual_hours | num }}</strong> · Urlaubstage: <strong>{{ user.vacation_days | num }}</strong> · Feiertage: <strong>{{ GERMAN_STATES.get(user.state, user.state) }}</strong>
+  {% if user.approver %}<br>Freigeber: <strong>{{ user.approver.name }}</strong>{% endif %}</p>
+  <small class="muted">Diese Werte pflegt ein Administrator.</small>
+</article>
+{% endblock %}

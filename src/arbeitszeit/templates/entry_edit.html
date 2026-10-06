@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% from "macros.html" import entry_form with context %}
+{% block title %}Buchung bearbeiten{% endblock %}
+{% block content %}
+<h1>Buchung bearbeiten</h1>
+{% if locked %}<p class="flash error">Der Monat ist gesperrt. Änderungen sind nicht möglich.</p>{% endif %}
+<article>{{ entry_form(projects, none, e.day, next, e=e, action='/zeiten/%d' % e.id, submit='Speichern') }}
+<a href="{{ next }}">Abbrechen</a></article>
+{% endblock %}

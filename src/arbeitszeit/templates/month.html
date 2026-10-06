@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "macros.html" import month_nav, day_table, approval_bar, period_stats, entry_form with context %}
+{% block title %}{{ MONTH_NAMES[month] }} {{ year }}{% endblock %}
+{% block content %}
+{% set next_url = '/zeiten?year=%d&month=%d' % (year, month) %}
+{{ month_nav('/zeiten', year, month, prev, next) }}
+{{ period_stats(stats) }}
+{{ approval_bar(status, approval, year, month, next_url, locked, stats) }}
+{% if not locked %}
+<details {% if not rows|selectattr('entries')|list %}open{% endif %}><summary role="button" class="outline">+ Zeit buchen</summary>
+  <article>{{ entry_form(projects, default_project, (today() if today().year == year and today().month == month else rows[0].day), next_url) }}</article>
+</details>
+{% else %}<p class="muted">🔒 Dieser Monat ist eingereicht bzw. freigegeben und gesperrt.</p>{% endif %}
+{{ day_table(rows, next_url, editable=not locked) }}
+{% endblock %}

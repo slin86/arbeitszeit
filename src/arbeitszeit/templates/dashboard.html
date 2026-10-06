@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "macros.html" import badge, saldo, entry_form, day_table, csrf_field with context %}
+{% block title %}Übersicht{% endblock %}
+{% block content %}
+{% set next = '/' %}
+<div class="toolbar"><h1>Hallo {{ user.name.split(' ')[0] }}</h1><span class="muted">{{ WEEKDAY_SHORT[today().weekday()] }}, {{ today() | de_date }}</span></div>
+
+{% if prev[2] in ('open', 'rejected') %}
+<div class="flash info">Der Vormonat <strong>{{ MONTH_NAMES[prev[1]] }} {{ prev[0] }}</strong> ist noch nicht eingereicht
+  ({{ badge(prev[2]) }}). <a href="/zeiten?year={{ prev[0] }}&month={{ prev[1] }}">Jetzt prüfen und einreichen →</a></div>
+{% endif %}
+{% if pending_count %}<div class="flash info"><a href="/freigaben">{{ pending_count }} Monat(e) warten auf Ihre Freigabe →</a></div>{% endif %}
+
+<div class="stats">
+  <article class="stat"><small>Heute</small><strong>{{ (today_row.minutes if today_row else 0) | hm }}</strong>
+    <small>Soll {{ (today_row.target if today_row else 0) | hm }}</small></article>
+  <article class="stat"><small>Diese Woche</small><strong>{{ week_stats.worked_minutes | hm }}</strong>
+    <small>Soll {{ week_stats.target_minutes | hm }} · {{ saldo(week_stats.saldo_minutes) }}</small></article>
+  <article class="stat"><small>{{ MONTH_NAMES[month] }}</small><strong>{{ month_stats.worked_minutes | hm }}</strong>
+    <small>Soll {{ month_stats.target_minutes | hm }} · {{ saldo(month_stats.saldo_minutes) }}</small></article>
+  <article class="stat"><small>Saldo {{ year }} (bis heute)</small><strong>{{ saldo(s.to_date.saldo_minutes) }}</strong>
+    <small>Ist {{ s.to_date.worked_minutes | hm }} / Soll {{ s.to_date.target_minutes | hm }}</small></article>
+</div>
+
+<div class="grid">
+  <article>
+    <header><strong>Jahresziel {{ year }}</strong></header>
+    {% set pct = (100 * s.year_stats.worked_minutes / s.year_stats.target_minutes) if s.year_stats.target_minutes else 0 %}
+    <p style="margin:0">{{ s.year_stats.worked_minutes | hm }} von {{ s.year_stats.target_minutes | hm }} h ({{ pct | round | int }} %)</p>
+    <div class="progress"><span style="width: {{ [pct, 100] | min }}%"></span></div>
+    <p class="muted" style="margin-top:.6rem">Noch <strong>{{ s.remaining_minutes | hm }} h</strong> in
+      {{ s.remaining_days | num }} Arbeitstagen ⇒ Ø <strong>{{ s.needed_per_day_minutes | hm }} h/Tag</strong>
+      <br>Tagessoll: {{ s.daily_minutes | hm }} h ({{ s.planned_days }} Arbeitstage nach Feiertagen &amp; Betriebsferien)</p>
+  </article>
+  <article>
+    <header><strong>Urlaub {{ year }}</strong></header>
+    <p style="margin:0"><strong>{{ s.vacation_left | num }}</strong> von {{ s.vacation_entitlement | num }} Tagen übrig</p>
+    {% set used = s.vacation_taken + s.vacation_planned %}
+    <div class="progress"><span style="width: {{ [100 * used / s.vacation_entitlement if s.vacation_entitlement else 0, 100] | min }}%"></span></div>
+    <p class="muted" style="margin-top:.6rem">{{ s.vacation_taken | num }} genommen · {{ s.vacation_planned | num }} geplant · <a href="/abwesenheiten">verwalten</a></p>
+  </article>
+</div>
+
+<article>
+  <header><strong>Schnell buchen</strong></header>
+  {{ entry_form(projects, default_project, today(), next) }}
+</article>
+{% endblock %}
