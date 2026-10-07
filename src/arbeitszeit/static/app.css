@@ -1,4 +1,10 @@
 :root { --az-ok: #2e9d5b; --az-warn: #c98a00; --az-bad: #c0392b; --az-muted: var(--pico-muted-color); }
+:root[data-theme="dark"] { --az-ok: #4cc38a; --az-warn: #e5b23a; --az-bad: #ff7466; --pico-background-color: #11151c; --pico-card-background-color: #181d27; --pico-card-sectioning-background-color: #1d2330; --pico-muted-border-color: #2a3242; }
+:root[data-theme="dark"] .stat, :root[data-theme="dark"] article { box-shadow: 0 1px 0 rgba(255,255,255,.03), 0 0 0 1px #232b3a; }
+:root[data-theme="dark"] input[type="date"], :root[data-theme="dark"] input[type="time"] { color-scheme: dark; }
+:root[data-theme="dark"] table.data.striped tbody tr:nth-child(odd) > * { background-color: rgba(255,255,255,.025); }
+.theme-btn { width: auto; margin: 0; padding: .15rem .5rem; line-height: 1.4; }
+.theme-float { position: fixed; top: .75rem; right: .75rem; z-index: 10; }
 body > header.container, body > main.container { max-width: 1280px; padding-inline: 1rem; }
 body > main.container { padding-bottom: 3rem; }
 nav.top { border-bottom: 1px solid var(--pico-muted-border-color); margin-bottom: 1rem; flex-wrap: wrap; }
@@ -11,8 +17,8 @@ nav.top .userbox { margin-left: auto; align-items: center; }
 nav.top .uname { max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: bottom; }
 .overflow-auto > table { margin-bottom: 0; }
 .overflow-auto { margin-bottom: var(--pico-spacing); }
-@media (min-width: 1100px) { nav.top { flex-wrap: nowrap; gap: 1rem; } nav.top ul.links { order: 0; flex: 1 1 auto; flex-wrap: nowrap; overflow: visible; justify-content: center; } nav.top .userbox { margin-left: 0; flex-wrap: nowrap; } nav.top .uname { max-width: 9rem; } }
-@media (max-width: 1099px) { nav.top ul.links { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); padding-right: 1.5rem; } }
+@media (min-width: 1280px) { nav.top { flex-wrap: nowrap; gap: 1rem; } nav.top ul.links { order: 0; flex: 1 1 auto; flex-wrap: nowrap; overflow: visible; justify-content: center; } nav.top .userbox { margin-left: 0; flex-wrap: nowrap; } nav.top .uname { max-width: 9rem; } }
+@media (max-width: 1279px) { nav.top ul.links { -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); padding-right: 1.5rem; } }
 @media (min-width: 1000px) { .form-grid.entry-grid { grid-template-columns: 10rem minmax(0, 1.4fr) 8.5rem 8.5rem 6rem minmax(9rem, 1fr); } .entry-grid .wide { grid-column: span 3; } }
 .brand { white-space: nowrap; font-weight: 700; font-size: 1.15rem; }
 .flash { padding: .6rem .9rem; border-radius: var(--pico-border-radius); margin-bottom: .6rem; border-left: 4px solid; background: var(--pico-card-background-color); }
@@ -97,4 +103,12 @@ button.linklike { all: unset; cursor: pointer; color: var(--pico-del-color); fon
   button.small, a.small, [role=button].small { min-height: 2.4rem; display: inline-flex; align-items: center; }
   nav.top ul.links a { padding-block: .7rem; }
   .tabs a { padding-block: .45rem; }
+}
+/* Schmale Desktops: Navigation kompakter, damit sie in eine Zeile passt */
+@media (min-width: 1280px) {
+  :root { --pico-font-size: 100%; }
+  nav.top { gap: .5rem; }
+  nav.top ul.links a, nav.top .userbox a { padding-inline: .45rem; }
+  nav.top .uname { max-width: 5.5rem; }
+  .brand { font-size: 1.05rem; }
 }

@@ -7,7 +7,7 @@ Webbasierter Arbeitszeit-Rechner und Zeiterfassung (Python/FastAPI).
 * **Ansichten**: Übersicht (Saldo, Jahresfortschritt, Ø nötige Stunden/Tag), Monat, Woche, Kalender, Jahr, Urlaub/Abwesenheit, Berichte (CSV-Export)
 * **Monatsfreigabe**: Mitarbeiter reichen einen Monat ein → Freigeber gibt frei oder lehnt mit Begründung ab. Eingereichte/freigegebene Monate sind gesperrt.
 * **Benutzerverwaltung** mit Rollen (Benutzer / Freigeber / Admin), lokale Anmeldung (bcrypt) **und** OIDC (Microsoft Entra ID, Google, beliebiger OIDC-Provider wie Keycloak/Okta/Authentik)
-* Frontend: serverseitig gerendert (Jinja2) + [htmx](https://htmx.org) + [Pico CSS](https://picocss.com) – beides im Repo mitgeliefert, kein CDN, kein Build-Schritt, Dark-Mode automatisch.
+* Frontend: serverseitig gerendert (Jinja2) + [htmx](https://htmx.org) + [Pico CSS](https://picocss.com) – beides im Repo mitgeliefert, kein CDN, kein Build-Schritt, Dark-Mode (Umschalter in der Navigation; folgt standardmäßig der Systemeinstellung, Wahl wird im Browser gemerkt).
 
 ## Schnellstart
 
