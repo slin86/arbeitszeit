@@ -28,7 +28,7 @@
     <small class="muted">Wochenenden, Feiertage und Betriebsferien werden automatisch übersprungen.</small>
   </form>
 </article>
-<table class="data striped">
+<div class="overflow-auto"><table class="data striped">
   <thead><tr><th>Zeitraum</th><th>Art</th><th class="num">Tage</th><th>Notiz</th><th></th></tr></thead>
   <tbody>
   {% for g in groups %}
@@ -41,5 +41,5 @@
     </tr>
   {% else %}<tr><td colspan="5" class="muted">Keine Einträge.</td></tr>{% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endblock %}

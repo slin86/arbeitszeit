@@ -28,8 +28,8 @@
     {% for name, m in by_user %}<div class="entry"><span>{{ name }}</span><strong>{{ m | hm }}</strong></div>{% else %}<p class="muted">–</p>{% endfor %}</article>
   {% endif %}
 </div>
-<table class="data striped"><thead><tr><th>Datum</th>{% if users | length > 1 %}<th>Mitarbeiter</th>{% endif %}<th>Projekt</th><th>Kommentar</th><th class="num">Dauer</th></tr></thead><tbody>
+<div class="overflow-auto"><table class="data striped"><thead><tr><th>Datum</th>{% if users | length > 1 %}<th>Mitarbeiter</th>{% endif %}<th>Projekt</th><th>Kommentar</th><th class="num">Dauer</th></tr></thead><tbody>
 {% for e in entries %}
   <tr><td>{{ e.day | de_date }}</td>{% if users | length > 1 %}<td>{{ e.user.name }}</td>{% endif %}<td>{{ e.project.code }}</td><td>{{ e.comment }}</td><td class="num">{{ e.minutes | hm }}</td></tr>
-{% endfor %}</tbody></table>
+{% endfor %}</tbody></table></div>
 {% endblock %}

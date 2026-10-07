@@ -39,6 +39,20 @@ class Settings(BaseSettings):
     # 1700 / (Arbeitstage - Urlaub)). True: Urlaub ist in den 1700 h enthalten.
     vacation_in_annual_hours: bool = False
 
+    # E-Mail-Versand (SMTP) – optional; ohne AZ_SMTP_HOST werden keine Mails verschickt
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_security: str = "starttls"  # starttls (Port 587) | ssl (Port 465) | none (nur lokal/Test)
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from: str | None = None  # Absenderadresse, z. B. zeit@deine-domain.de (am besten = SMTP-Postfach)
+    smtp_from_name: str = "Arbeitszeit"
+    smtp_reply_to: str | None = None
+
+    @property
+    def mail_enabled(self) -> bool:
+        return bool(self.smtp_host and self.smtp_from)
+
     # OIDC
     oidc_auto_create_users: bool = True
     oidc_link_by_email: bool = True

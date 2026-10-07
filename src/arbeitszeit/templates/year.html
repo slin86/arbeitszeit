@@ -10,7 +10,7 @@
 {{ period_stats(s.year_stats) }}
 <p class="muted">Tagessoll {{ s.daily_minutes | hm }} h = {{ user.annual_hours | num }} h ÷ {{ s.planned_days }} Arbeitstage{% if not settings.vacation_in_annual_hours %} − {{ user.vacation_days | num }} Urlaubstage{% endif %}.
  Betriebsferien {{ settings.shutdown_start[3:] }}.{{ settings.shutdown_start[:2] }}.–{{ settings.shutdown_end[3:] }}.{{ settings.shutdown_end[:2] }}. und Feiertage ({{ GERMAN_STATES.get(user.state, user.state) }}) sind abgezogen.</p>
-<table class="data striped">
+<div class="overflow-auto"><table class="data striped">
   <thead><tr><th>Monat</th><th class="num">Arbeitstage</th><th class="num">Abwesend</th><th class="num">Soll</th><th class="num">Ist</th><th class="num">Saldo</th><th class="num">Σ Saldo</th><th>Status</th></tr></thead>
   <tbody>
   {% for st in s.months %}
@@ -29,5 +29,5 @@
   <tfoot><tr><th>Summe</th><th class="num">{{ s.year_stats.planned_days }}</th><th class="num">{{ s.year_stats.absence_days | num }}</th>
     <th class="num">{{ s.year_stats.target_minutes | hm }}</th><th class="num">{{ s.year_stats.worked_minutes | hm }}</th>
     <th class="num">{{ saldo(s.year_stats.saldo_minutes) }}</th><th></th><th></th></tr></tfoot>
-</table>
+</table></div>
 {% endblock %}

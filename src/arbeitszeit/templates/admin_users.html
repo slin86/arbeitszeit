@@ -2,7 +2,7 @@
 {% block title %}Benutzer{% endblock %}
 {% block content %}
 <div class="toolbar"><h1>Benutzer</h1><a role="button" href="/admin/benutzer/neu">+ Neuer Benutzer</a></div>
-<table class="data striped"><thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th class="num">Std./Jahr</th><th class="num">Urlaub</th><th>Freigeber</th><th>Login</th><th></th></tr></thead><tbody>
+<div class="overflow-auto"><table class="data striped"><thead><tr><th>Name</th><th>E-Mail</th><th>Rolle</th><th class="num">Std./Jahr</th><th class="num">Urlaub</th><th>Freigeber</th><th>Login</th><th></th></tr></thead><tbody>
 {% for u in users %}
   <tr><td>{{ u.name }}{% if not u.is_active %} <span class="badge rejected">inaktiv</span>{% endif %}</td><td>{{ u.email }}</td>
     <td>{{ {'user': 'Benutzer', 'approver': 'Freigeber', 'admin': 'Admin'}[u.role] }}</td>
@@ -10,5 +10,5 @@
     <td>{{ u.approver.name if u.approver else '' }}</td>
     <td>{% if u.password_hash %}Passwort{% endif %}{% if u.identities %} {{ u.identities | map(attribute='provider') | join(', ') }}{% endif %}</td>
     <td class="num"><a href="/admin/benutzer/{{ u.id }}">Bearbeiten</a></td></tr>
-{% endfor %}</tbody></table>
+{% endfor %}</tbody></table></div>
 {% endblock %}

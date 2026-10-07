@@ -9,7 +9,7 @@
 <form method="post" action="{{ action }}">
   {{ csrf_field() }}
   <input type="hidden" name="next" value="{{ next }}">
-  <div class="form-grid">
+  <div class="form-grid entry-grid">
     <label>Datum <input type="date" name="day" value="{{ (e.day if e else day).isoformat() }}" required></label>
     <label>Projekt
       <select name="project_id" required>
@@ -43,14 +43,14 @@
 
 {# Eine Tagesliste mit Buchungen (Monat/Woche/Freigabe-Detail) #}
 {% macro day_table(rows, next, editable=True) %}
-<table class="data striped">
-  <thead><tr><th>Tag</th><th>Buchungen</th><th class="num">Ist</th><th class="num">Soll</th></tr></thead>
+<div class="overflow-auto"><table class="data striped daytable">
+  <thead><tr><th>Tag</th><th>Buchungen</th><th class="num">Ist</th><th class="num soll">Soll</th></tr></thead>
   <tbody>
   {% for r in rows %}
     <tr class="{{ 'off' if not r.workday and not r.entries else '' }} {{ 'today' if r.day == today() else '' }}">
-      <td style="white-space:nowrap"><strong>{{ WEEKDAY_SHORT[r.day.weekday()] }}</strong> {{ r.day.strftime('%d.%m.') }}
+      <td class="d-day" style="white-space:nowrap"><strong>{{ WEEKDAY_SHORT[r.day.weekday()] }}</strong> {{ r.day.strftime('%d.%m.') }}
         {% if r.label %}<br><small class="muted">{{ r.label }}</small>{% endif %}</td>
-      <td>
+      <td class="d-entries">
         {% if r.absence %}<div><span class="badge open">{{ ABSENCE_LABELS[r.absence.kind] }}{% if r.absence.fraction < 1 %} ½{% endif %}</span> <small class="muted">{{ r.absence.note }}</small></div>{% endif %}
         {% for e in r.entries %}
         <div class="entry">
@@ -66,12 +66,12 @@
         </div>
         {% endfor %}
       </td>
-      <td class="num">{{ r.minutes | hm if r.minutes else '' }}</td>
-      <td class="num muted">{{ r.target | hm if r.workday else '' }}</td>
+      <td class="num d-ist">{{ r.minutes | hm if r.minutes else '' }}</td>
+      <td class="num muted soll">{{ r.target | hm if r.workday else '' }}</td>
     </tr>
   {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% endmacro %}
 
 {# Freigabe-Leiste #}

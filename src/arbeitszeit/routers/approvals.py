@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import date
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import calc, services
+from .. import calc, mail, notifications, services
 from ..config import get_settings
 from ..db import get_db
 from ..models import MonthApproval, MonthStatus, Role, User
@@ -104,9 +104,12 @@ def detail(
     )
 
 
-def _act(request, db, actor, approval_id, fn, ok_msg):
+def _act(request, db, actor, approval_id, fn, ok_msg, background=None, what=None):
     try:
         a = fn()
+        if background is not None and what:
+            s = get_settings()
+            background.add_task(mail.send_many, notifications.decided(a, s, what), s)
         flash(request, ok_msg, "success")
     except services.RuleError as e:
         a = db.get(MonthApproval, approval_id)
@@ -118,32 +121,35 @@ def _act(request, db, actor, approval_id, fn, ok_msg):
 def approve(
     approval_id: int,
     request: Request,
+    background: BackgroundTasks,
     note: str = Form(""),
     actor: User = Depends(require_approver),
     db: Session = Depends(get_db),
 ):
     _load(db, actor, approval_id)
-    return _act(request, db, actor, approval_id, lambda: services.decide_month(db, actor, approval_id, True, note), "Monat freigegeben.")
+    return _act(request, db, actor, approval_id, lambda: services.decide_month(db, actor, approval_id, True, note), "Monat freigegeben.", background, "approved")
 
 
 @router.post("/{approval_id}/ablehnen", dependencies=[Depends(csrf_protect)])
 def reject(
     approval_id: int,
     request: Request,
+    background: BackgroundTasks,
     note: str = Form(""),
     actor: User = Depends(require_approver),
     db: Session = Depends(get_db),
 ):
     _load(db, actor, approval_id)
-    return _act(request, db, actor, approval_id, lambda: services.decide_month(db, actor, approval_id, False, note), "Monat abgelehnt und zur Korrektur zurückgegeben.")
+    return _act(request, db, actor, approval_id, lambda: services.decide_month(db, actor, approval_id, False, note), "Monat abgelehnt und zur Korrektur zurückgegeben.", background, "rejected")
 
 
 @router.post("/{approval_id}/oeffnen", dependencies=[Depends(csrf_protect)])
 def reopen(
     approval_id: int,
     request: Request,
+    background: BackgroundTasks,
     actor: User = Depends(require_approver),
     db: Session = Depends(get_db),
 ):
     _load(db, actor, approval_id)
-    return _act(request, db, actor, approval_id, lambda: services.reopen_month(db, actor, approval_id), "Monat wieder geöffnet.")
+    return _act(request, db, actor, approval_id, lambda: services.reopen_month(db, actor, approval_id), "Monat wieder geöffnet.", background, "reopened")

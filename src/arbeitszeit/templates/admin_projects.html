@@ -6,7 +6,7 @@
 <article><form method="post" action="/admin/projekte">{{ csrf_field() }}
   <div class="form-grid"><label>Nummer / Kürzel <input name="code" maxlength="30" required></label>
   <label class="wide">Name <input name="name" maxlength="200" required></label><button>Anlegen</button></div></form></article>
-<table class="data striped"><thead><tr><th>Nummer</th><th>Name</th><th class="num">Gebucht</th><th>Aktiv</th><th></th></tr></thead><tbody>
+<div class="overflow-auto"><table class="data striped"><thead><tr><th>Nummer</th><th>Name</th><th class="num">Gebucht</th><th>Aktiv</th><th></th></tr></thead><tbody>
 {% for p, minutes in rows %}
   <tr>
     <td><form id="f{{ p.id }}" method="post" action="/admin/projekte/{{ p.id }}" style="margin:0">{{ csrf_field() }}</form>
@@ -15,5 +15,5 @@
     <td class="num">{{ minutes | hm }}</td>
     <td><input form="f{{ p.id }}" type="checkbox" name="is_active" value="1" {% if p.is_active %}checked{% endif %} style="margin:0"></td>
     <td class="num"><button form="f{{ p.id }}" class="small">Speichern</button></td></tr>
-{% endfor %}</tbody></table>
+{% endfor %}</tbody></table></div>
 {% endblock %}

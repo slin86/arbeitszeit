@@ -1,7 +1,7 @@
 from collections.abc import Iterator
 from pathlib import Path
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -40,6 +40,7 @@ def init_engine(url: str | None = None) -> Engine:
     from . import models  # noqa: F401  (registriert Tabellen)
 
     Base.metadata.create_all(_engine)
+    _add_missing_columns(_engine)
     return _engine
 
 
@@ -52,3 +53,25 @@ def get_db() -> Iterator[Session]:
 def session_factory() -> sessionmaker[Session]:
     assert _SessionLocal is not None
     return _SessionLocal
+
+
+def _add_missing_columns(engine: Engine) -> None:
+    """Minimale Schema-Fortschreibung: fehlende Spalten bestehender Tabellen werden ergänzt
+    (ersetzt keine echten Migrationen, genügt für additive Änderungen)."""
+    insp = inspect(engine)
+    for table in Base.metadata.sorted_tables:
+        if not insp.has_table(table.name):
+            continue
+        existing = {c["name"] for c in insp.get_columns(table.name)}
+        for col in table.columns:
+            if col.name in existing:
+                continue
+            ddl = f'ALTER TABLE {table.name} ADD COLUMN {col.name} {col.type.compile(engine.dialect)}'
+            default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
+            if default is not None:
+                lit = ("1" if default else "0") if isinstance(default, bool) else (
+                    str(default) if isinstance(default, (int, float)) else "'" + str(default).replace("'", "''") + "'"
+                )
+                ddl += f" DEFAULT {lit}"
+            with engine.begin() as conn:
+                conn.execute(text(ddl))
