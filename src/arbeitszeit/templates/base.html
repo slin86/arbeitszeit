@@ -13,9 +13,9 @@
 {% if user %}
 <header class="container">
   <nav class="top">
-    <ul><li><a href="/" class="brand">⏱ Arbeitszeit</a></li></ul>
+    <ul class="brandbox"><li><a href="/" class="brand">⏱ Arbeitszeit</a></li></ul>
     {% set p = request.url.path %}
-    <ul>
+    <ul class="links">
       <li><a href="/" {% if p == '/' %}aria-current="page"{% endif %}>Übersicht</a></li>
       <li><a href="/zeiten" {% if p.startswith('/zeiten') or p.startswith('/woche') or p.startswith('/kalender') %}aria-current="page"{% endif %}>Zeiten</a></li>
       <li><a href="/abwesenheiten" {% if p.startswith('/abwesenheiten') %}aria-current="page"{% endif %}>Urlaub</a></li>
@@ -27,8 +27,8 @@
       <li><a href="/admin/projekte" {% if p.startswith('/admin/projekte') %}aria-current="page"{% endif %}>Projekte</a></li>
       {% endif %}
     </ul>
-    <ul>
-      <li><a href="/profil">{{ user.name }}</a></li>
+    <ul class="userbox">
+      <li><a href="/profil" class="uname">{{ user.name }}</a></li>
       <li><form method="post" action="/logout" style="margin:0"><input type="hidden" name="csrf_token" value="{{ csrf }}"><button class="secondary outline small">Abmelden</button></form></li>
     </ul>
   </nav>
