@@ -19,6 +19,7 @@ dependencies = [
     "bcrypt>=4.1",
     "pydantic-settings>=2.4",
     "holidays>=0.55",
+    "dnspython>=2.6",
 ]
 
 [project.optional-dependencies]

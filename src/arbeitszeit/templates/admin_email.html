@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "macros.html" import csrf_field with context %}
+{% block title %}E-Mail{% endblock %}
+{% block content %}
+<h1>E-Mail-Versand</h1>
+<article>
+  <header><strong>Status</strong></header>
+  {% if settings.mail_enabled %}
+  <table class="data"><tbody>
+    <tr><th>Server</th><td>{{ settings.smtp_host }}:{{ settings.smtp_port }} ({{ settings.smtp_security }})</td></tr>
+    <tr><th>Anmeldung</th><td>{{ settings.smtp_user or '– keine –' }}{% if settings.smtp_password %} · Passwort gesetzt{% endif %}</td></tr>
+    <tr><th>Absender</th><td>{{ settings.smtp_from_name }} &lt;{{ settings.smtp_from }}&gt;</td></tr>
+  </tbody></table>
+  <div class="grid">
+    <form method="post" action="/admin/email/test" style="margin:0">{{ csrf_field() }}<button>Test-E-Mail an mich senden</button></form>
+    <form method="post" action="/admin/email/dns" style="margin:0">{{ csrf_field() }}<button class="secondary outline">SPF/DMARC von {{ domain }} prüfen</button></form>
+  </div>
+  {% if dns %}
+  <table class="data"><tbody>
+    {% for c in dns %}<tr><th>{{ c.name }}</th><td><span class="badge {{ 'approved' if c.ok else 'rejected' }}">{{ 'OK' if c.ok else 'fehlt' }}</span> <small class="muted">{{ c.detail }}</small></td></tr>{% endfor %}
+    <tr><th>DKIM</th><td><small class="muted">Lässt sich ohne Selektor nicht automatisch prüfen – in der Test-Mail unter „Original anzeigen“ (Gmail) nach <code>dkim=pass</code> schauen.</small></td></tr>
+  </tbody></table>
+  {% endif %}
+  {% else %}
+  <p>Der Versand ist nicht eingerichtet. In der <code>.env</code> setzen und neu starten:</p>
+  <pre><code>AZ_SMTP_HOST=smtp.dein-anbieter.de
+AZ_SMTP_PORT=587
+AZ_SMTP_SECURITY=starttls
+AZ_SMTP_USER=zeit@deine-domain.de
+AZ_SMTP_PASSWORD=…
+AZ_SMTP_FROM=zeit@deine-domain.de</code></pre>
+  {% endif %}
+</article>
+<article>
+  <header><strong>Damit Mails nicht im Spam landen</strong></header>
+  <ol>
+    <li><strong>Über den SMTP-Server deines Postfach-Anbieters senden</strong> und als Absender genau dieses Postfach (oder eine Adresse derselben Domain) verwenden – nicht direkt vom App-Server aus.</li>
+    <li><strong>SPF</strong>: Ein TXT-Eintrag auf der Domain, der den Server des Anbieters erlaubt (genau einer!). Der Anbieter nennt den passenden Wert.</li>
+    <li><strong>DKIM</strong>: Den DKIM-Schlüssel des Anbieters für die Domain aktivieren bzw. als DNS-Eintrag setzen.</li>
+    <li><strong>DMARC</strong>: TXT auf <code>_dmarc.deine-domain.de</code>, z. B. <code>v=DMARC1; p=none; rua=mailto:zeit@deine-domain.de</code> – später auf <code>quarantine</code> verschärfen. Gmail und Yahoo verlangen für regelmäßige Absender SPF und DKIM, mit DMARC im Einklang mit der From-Domain.</li>
+    <li>Wenige, relevante Mails (hier nur Freigabe-Meldungen), kein Marketing-Ton, reiner Text, keine Link-Kürzer. Benachrichtigungen lassen sich im Profil abschalten.</li>
+    <li>Absender-Postfach nicht für Massenversand nutzen und das Passwort nur in der <code>.env</code> halten.</li>
+  </ol>
+</article>
+{% endblock %}

@@ -76,6 +76,7 @@ class User(Base):
     start_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     # Über-/Minusstunden-Saldo (in Stunden) zum Startdatum, z. B. aus dem alten Zeittool
     opening_balance_hours: Mapped[float] = mapped_column(Float, default=0.0)
+    notify_email: Mapped[bool] = mapped_column(Boolean, default=True)  # Benachrichtigungen per E-Mail
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
 
     approver: Mapped[User | None] = relationship(remote_side="User.id")

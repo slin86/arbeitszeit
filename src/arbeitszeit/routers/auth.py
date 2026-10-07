@@ -116,6 +116,7 @@ def profile(request: Request, user: User = Depends(current_user)):
 def profile_save(
     request: Request,
     name: str = Form(...),
+    notify_email: str = Form(""),
     current_password: str = Form(""),
     new_password: str = Form(""),
     user: User = Depends(current_user),
@@ -125,6 +126,7 @@ def profile_save(
         flash(request, "Name darf nicht leer sein.", "error")
         return redirect("/profil")
     user.name = name.strip()
+    user.notify_email = bool(notify_email)
     if new_password:
         if len(new_password) < 10:
             flash(request, "Das neue Passwort muss mindestens 10 Zeichen lang sein.", "error")

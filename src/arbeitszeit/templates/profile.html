@@ -7,6 +7,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf }}">
     <label>E-Mail <input value="{{ user.email }}" disabled></label>
     <label>Name <input name="name" value="{{ user.name }}" required></label>
+    <label><input type="checkbox" name="notify_email" value="1" {% if user.notify_email %}checked{% endif %}> Benachrichtigungen per E-Mail{% if not settings.mail_enabled %} <small class="muted">(E-Mail-Versand ist serverseitig nicht eingerichtet)</small>{% endif %}</label>
     <details {% if not user.password_hash %}open{% endif %}>
       <summary>{{ 'Passwort ändern' if user.password_hash else 'Lokales Passwort festlegen' }}</summary>
       {% if user.password_hash %}<label>Aktuelles Passwort <input type="password" name="current_password" autocomplete="current-password"></label>{% endif %}

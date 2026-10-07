@@ -40,6 +40,13 @@ Docker: `docker build -t arbeitszeit . && docker run -p 8000:8000 -v az:/data --
 Redirect-URI jeweils `{AZ_BASE_URL}/auth/<provider>/callback` mit `<provider>` = `azure`, `google` oder `sso` (generisch). Die nötigen Variablen stehen in `.env.example`.
 Neue OIDC-Benutzer werden automatisch als Rolle „Benutzer“ angelegt (`AZ_OIDC_AUTO_CREATE_USERS=false` zum Abschalten). Bestehende lokale Konten werden nur per E-Mail verknüpft, wenn der Provider die Adresse als verifiziert meldet (bei Entra ID wird der Mandant als vertrauenswürdig behandelt). Mit `AZ_LOCAL_LOGIN_ENABLED=false` ist nur noch SSO möglich.
 
+## E-Mail-Benachrichtigungen
+
+Optional: Bei Einreichung bekommt der Freigeber eine Mail, bei Freigabe/Ablehnung/Wiedereröffnung der Mitarbeiter (jeder kann das im Profil abschalten). Ohne `AZ_SMTP_HOST` + `AZ_SMTP_FROM` wird nichts versendet.
+Versand läuft im Hintergrund; ein SMTP-Fehler bricht nie eine Anfrage ab (wird geloggt). Unter **Admin → E-Mail** gibt es Test-Mail und SPF/DMARC-Prüfung der Absenderdomain.
+
+Für gute Zustellbarkeit: über den SMTP-Server des Postfach-Anbieters senden, Absender = dieses Postfach (gleiche Domain), SPF + DKIM + DMARC für die Domain einrichten (Checkliste auf der Admin-Seite).
+
 ## Sicherheit
 
 bcrypt-Passwörter, signierte Session-Cookies (`AZ_HTTPS_ONLY=true` hinter HTTPS), CSRF-Token auf allen POSTs, Login-Drosselung (pro Prozess), Open-Redirect-Schutz, CSV-Formel-Escaping, Rechteprüfung auf jeder Route.
@@ -54,7 +61,7 @@ src/arbeitszeit/
   templates/     Jinja2 · static/ app.css + vendor (htmx, pico)
 ```
 
-Schema wird beim Start per `create_all` angelegt (noch keine Migrationen – für spätere Schemaänderungen Alembic ergänzen).
+Schema wird beim Start per `create_all` angelegt; fehlende Spalten bestehender Tabellen werden automatisch ergänzt (additive Änderungen). Für größere Umbauten Alembic ergänzen.
 
 ## Grenzen
 

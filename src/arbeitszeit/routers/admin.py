@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from ..calc import GERMAN_STATES
 from ..config import get_settings
 from ..db import get_db
+from .. import dnscheck, mail
 from ..models import Project, Role, TimeEntry, User
 from ..security import csrf_protect, hash_password, require_admin
 from ..web import flash, redirect, render
@@ -153,3 +154,42 @@ def project_update(
         db.commit()
         flash(request, "Projekt gespeichert.", "success")
     return redirect("/admin/projekte")
+
+
+# --- E-Mail ---
+@router.get("/email")
+def email_settings(request: Request, admin: User = Depends(require_admin)):
+    s = get_settings()
+    domain = s.smtp_from.rsplit("@", 1)[-1] if s.smtp_from and "@" in s.smtp_from else None
+    return render(
+        request,
+        "admin_email.html",
+        user=admin,
+        domain=domain,
+        dns=request.session.pop("dns", None),
+    )
+
+
+@router.post("/email/test", dependencies=[Depends(csrf_protect)])
+def email_test(request: Request, admin: User = Depends(require_admin)):
+    s = get_settings()
+    if not s.mail_enabled:
+        flash(request, "SMTP ist nicht konfiguriert (AZ_SMTP_HOST und AZ_SMTP_FROM setzen).", "error")
+        return redirect("/admin/email")
+    msg = mail.build_message(
+        s, admin.email, "Arbeitszeit: Test-E-Mail", "Wenn du das liest, funktioniert der E-Mail-Versand.\n"
+    )
+    try:
+        mail.deliver(msg, s)
+        flash(request, f"Test-E-Mail an {admin.email} gesendet. Prüfe auch den Spam-Ordner.", "success")
+    except Exception as e:  # noqa: BLE001 - Fehlertext hilft dem Admin bei der Einrichtung
+        flash(request, f"Versand fehlgeschlagen: {type(e).__name__}: {e}", "error")
+    return redirect("/admin/email")
+
+
+@router.post("/email/dns", dependencies=[Depends(csrf_protect)])
+def email_dns(request: Request, admin: User = Depends(require_admin)):
+    s = get_settings()
+    if s.smtp_from and "@" in s.smtp_from:
+        request.session["dns"] = dnscheck.check_domain(s.smtp_from.rsplit("@", 1)[-1])
+    return redirect("/admin/email")

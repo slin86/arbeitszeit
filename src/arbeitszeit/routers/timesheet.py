@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from .. import calc, services
+from .. import calc, mail, notifications, services
 from ..config import get_settings
 from ..db import get_db
 from ..models import Absence, AbsenceKind, MonthStatus, Project, TimeEntry, User
@@ -459,6 +459,7 @@ def delete_absences(
 @router.post("/monat/einreichen", dependencies=[Depends(csrf_protect)])
 def submit(
     request: Request,
+    background: BackgroundTasks,
     year: int = Form(...),
     month: int = Form(...),
     next: str = Form(""),
@@ -466,7 +467,8 @@ def submit(
     db: Session = Depends(get_db),
 ):
     try:
-        services.submit_month(db, user, year, month, get_settings())
+        a = services.submit_month(db, user, year, month, get_settings())
+        background.add_task(mail.send_many, notifications.submitted(db, a, get_settings()), get_settings())
         flash(request, f"{calc.MONTH_NAMES[month]} {year} zur Freigabe eingereicht.", "success")
     except services.RuleError as e:
         flash(request, str(e), "error")

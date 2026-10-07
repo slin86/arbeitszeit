@@ -268,3 +268,55 @@ def test_security_headers_free_pages(client):
     assert client.get("/healthz").json() == {"status": "ok"}
     assert client.get("/static/vendor/htmx.min.js").status_code == 200
     assert re.search("<form", client.get("/login").text)
+
+
+# --- E-Mail ---
+def _mail_settings():
+    from arbeitszeit.config import Settings
+
+    return Settings(_env_file=None, smtp_host="smtp.example.com", smtp_user="zeit@example.com",
+                    smtp_password="pw", smtp_from="zeit@example.com", base_url="https://zeit.example.com")
+
+
+def test_message_headers_and_no_injection():
+    from arbeitszeit import mail
+
+    msg = mail.build_message(_mail_settings(), "a@b.de", "Betreff", "Text")
+    assert msg["From"] == "Arbeitszeit <zeit@example.com>"
+    assert msg["Message-ID"].endswith("@example.com>")
+    assert msg["Auto-Submitted"] == "auto-generated"
+    import pytest
+
+    with pytest.raises(ValueError):  # Header-Injection wird abgelehnt
+        mail.build_message(_mail_settings(), "a@b.de", "x\nBcc: evil@x.de", "t")
+
+
+def test_workflow_sends_notifications(client, monkeypatch):
+    from arbeitszeit import config, mail
+
+    settings = _mail_settings()
+    monkeypatch.setattr(config, "get_settings", lambda: settings)
+    for mod in ("arbeitszeit.routers.timesheet", "arbeitszeit.routers.approvals"):
+        monkeypatch.setattr(mod + ".get_settings", lambda: settings)
+    sent = []
+    monkeypatch.setattr(mail, "deliver", lambda msg, s: sent.append(msg))
+    y, m = last_month()
+    mgr = add_user("chef2@example.com", role="approver")
+    add_user("emp2@example.com", approver_id=mgr)
+    login(client, "emp2@example.com", "userpassword1")
+    post(client, "/zeiten", {"day": f"{y}-{m:02d}-10", "project_id": 1, "duration": "8"})
+    post(client, "/monat/einreichen", {"year": y, "month": m})
+    assert [x["To"] for x in sent] == ["chef2@example.com"]
+    assert "zeit.example.com/freigaben/" in sent[0].get_content()
+    post(client, "/logout")
+    login(client, "chef2@example.com", "userpassword1")
+    with dbmod.session_factory()() as db:
+        aid = db.scalar(select(MonthApproval)).id
+    post(client, f"/freigaben/{aid}/ablehnen", {"note": "Stunden fehlen"}, page=f"/freigaben/{aid}")
+    assert sent[-1]["To"] == "emp2@example.com" and "Stunden fehlen" in sent[-1].get_content()
+
+
+def test_no_mail_without_smtp(admin):
+    assert admin.get("/admin/email").status_code == 200
+    r = post(admin, "/admin/email/test", page="/admin/email")
+    assert r.status_code == 303

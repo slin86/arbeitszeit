@@ -27,6 +27,7 @@
       {% if user.is_admin %}
       <li><a href="/admin/benutzer" {% if p.startswith('/admin/benutzer') %}aria-current="page"{% endif %}>Benutzer</a></li>
       <li><a href="/admin/projekte" {% if p.startswith('/admin/projekte') %}aria-current="page"{% endif %}>Projekte</a></li>
+      <li><a href="/admin/email" {% if p.startswith('/admin/email') %}aria-current="page"{% endif %}>E-Mail</a></li>
       {% endif %}
     </ul>
     <ul class="userbox">
