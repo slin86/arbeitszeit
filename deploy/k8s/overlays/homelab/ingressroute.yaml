@@ -1,0 +1,17 @@
+# Public route on Traefik's `public` entry point, TLS with the *.slin.io wildcard certificate,
+# same as kontor.slin.io. The session cookie is Secure (AZ_HTTPS_ONLY), so there is no plain-HTTP
+# *.home.lan ingress: signing in would not work there.
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: arbeitszeit-public
+spec:
+  entryPoints:
+    - public
+  routes:
+    - match: Host(`zeit.slin.io`)
+      kind: Rule
+      services:
+        - name: arbeitszeit
+          port: 80
+  tls: {}

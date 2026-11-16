@@ -69,7 +69,8 @@ def _add_missing_columns(engine: Engine) -> None:
             ddl = f'ALTER TABLE {table.name} ADD COLUMN {col.name} {col.type.compile(engine.dialect)}'
             default = col.default.arg if col.default is not None and not callable(col.default.arg) else None
             if default is not None:
-                lit = ("1" if default else "0") if isinstance(default, bool) else (
+                # TRUE/FALSE work on SQLite and PostgreSQL; PostgreSQL rejects 1/0 for a boolean column
+                lit = ("TRUE" if default else "FALSE") if isinstance(default, bool) else (
                     str(default) if isinstance(default, (int, float)) else "'" + str(default).replace("'", "''") + "'"
                 )
                 ddl += f" DEFAULT {lit}"
