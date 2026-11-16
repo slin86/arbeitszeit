@@ -1,0 +1,30 @@
+# Apply once to the cluster: kubectl apply -f deploy/argocd/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: arbeitszeit
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/slin86/arbeitszeit.git
+    targetRevision: main
+    path: deploy/k8s/overlays/homelab
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: arbeitszeit
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 2m

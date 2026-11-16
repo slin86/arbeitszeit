@@ -1,0 +1,8 @@
+# Settings of this installation. Kept out of kustomization.yaml, because CI rewrites that file with
+# `kustomize edit set image`, which does not keep comments in place.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arbeitszeit-config
+data:
+  AZ_BASE_URL: https://zeit.slin.io

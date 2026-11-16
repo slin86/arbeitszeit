@@ -21,6 +21,9 @@ pytest
 
 Der erste Administrator wird beim ersten Start aus `AZ_ADMIN_EMAIL`/`AZ_ADMIN_PASSWORD` angelegt – alternativ `arbeitszeit create-admin you@example.com`.
 Docker: `docker build -t arbeitszeit . && docker run -p 8000:8000 -v az:/data --env-file .env arbeitszeit`.
+Kubernetes (homelab, Argo CD, PostgreSQL): siehe [deploy/README.md](deploy/README.md).
+
+Tests gegen PostgreSQL statt SQLite: `AZ_TEST_DATABASE_URL=postgresql+psycopg://user:pass@localhost/az_test pytest`.
 
 ## Berechnung
 

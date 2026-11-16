@@ -1,0 +1,16 @@
+# Settings that are not secret. Secrets (AZ_SECRET_KEY, AZ_DATABASE_URL, the first admin and any
+# OIDC client secrets) come from Infisical, see infisical-secret.yaml and deploy/README.md.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: arbeitszeit-config
+data:
+  AZ_HTTPS_ONLY: "true"
+  AZ_LOCAL_LOGIN_ENABLED: "true"
+  # The cluster's central mail relay (Postfix -> Amazon SES): plain SMTP on the pod network,
+  # no login, and the sender must be an @slin.io address.
+  AZ_SMTP_HOST: mail-relay.mail.svc.cluster.local
+  AZ_SMTP_PORT: "587"
+  AZ_SMTP_SECURITY: none
+  AZ_SMTP_FROM: noreply@slin.io
+  AZ_SMTP_FROM_NAME: Arbeitszeit

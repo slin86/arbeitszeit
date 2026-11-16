@@ -1,0 +1,101 @@
+name: Images
+
+# Pull requests: run the tests on SQLite and PostgreSQL.
+# main: the same tests, then build and publish ghcr.io/slin86/arbeitszeit and point the homelab
+# overlay at the new image, so Argo CD rolls it out. The deploy commit only touches deploy/, which
+# this workflow does not watch, so it cannot trigger itself.
+on:
+  pull_request:
+  push:
+    branches: [main]
+    paths:
+      - src/**
+      - tests/**
+      - pyproject.toml
+      - Dockerfile
+      - .github/workflows/images.yml
+  workflow_dispatch:
+
+concurrency:
+  group: images-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/slin86/arbeitszeit
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: arbeitszeit
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+      - run: pip install -e ".[postgres,dev]"
+      - name: Tests on SQLite
+        run: pytest -q
+      - name: Tests on PostgreSQL
+        env:
+          AZ_TEST_DATABASE_URL: postgresql+psycopg://postgres:postgres@localhost:5432/arbeitszeit
+        run: pytest -q
+
+  publish:
+    needs: test
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Point the homelab overlay at the new image and push
+        env:
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          kustomize_version=v5.4.3
+          curl -sSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2F${kustomize_version}/kustomize_${kustomize_version}_linux_amd64.tar.gz" | tar -xz -C /tmp
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # The file only holds generated tags, so on a race start over from the latest main.
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            (cd deploy/k8s/overlays/homelab && /tmp/kustomize edit set image "${IMAGE}=${IMAGE}:${TAG}")
+            git add deploy/k8s/overlays/homelab/kustomization.yaml
+            git diff --cached --quiet && exit 0
+            git commit -m "Deploy ${TAG} [skip ci]"
+            git push origin HEAD:main && exit 0
+            sleep $((attempt * 3))
+          done
+          exit 1
